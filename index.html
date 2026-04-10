@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organic Social & E-mail Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --red: #e90100;
+    --dark: #111111;
+    --mid: #1e1e1e;
+    --card: #242424;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f0f0;
+    --muted: #888;
+    --fb-blue: #1877F2;
+    --fb-blue-light: rgba(24,119,242,0.15);
+    --ig: #E1306C;
+    --ig-light: rgba(225,48,108,0.12);
+    --hs: #FF7A59;
+    --hs-light: rgba(255,122,89,0.12);
+    --green: #4ade80;
+    --red-val: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Poppins', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: var(--mid); border-bottom: 1px solid var(--border); padding: 22px 48px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo-dot { width: 10px; height: 10px; background: var(--red); border-radius: 50%; flex-shrink: 0; }
+  .brand { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); }
+  .header-title { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--border); }
+
+  /* TAB NAV */
+  .tab-nav { background: var(--mid); border-bottom: 1px solid var(--border); padding: 0 48px; display: flex; gap: 0; position: sticky; top: 69px; z-index: 150; }
+  .tab-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 16px 24px;
+    border: none; background: transparent;
+    font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); }
+  .tab-btn.active.fb { border-bottom-color: var(--fb-blue); color: #5ba3f5; }
+  .tab-btn.active.ig { border-bottom-color: var(--ig); color: #f06090; }
+  .tab-btn.active.hs { border-bottom-color: var(--hs); color: #ffaa8a; }
+  .tab-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tab-dot.fb { background: var(--fb-blue); }
+  .tab-dot.ig { background: var(--ig); }
+  .tab-dot.hs { background: var(--hs); }
+
+  /* TAB PANELS */
+  .tab-panel { display: none; padding-bottom: 60px; }
+  .tab-panel.active { display: block; }
+
+  /* SHARED INNER STYLES */
+  .main { padding: 40px 48px 0; }
+
+  .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 36px; }
+  .kpi-strip-2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 36px; }
+  .kpi-strip-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+
+  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; opacity:0; transition:opacity 0.2s; }
+  .kpi-card:hover::before { opacity:1; }
+  .tab-panel.fb-panel .kpi-card:hover { border-color: rgba(24,119,242,0.35); }
+  .tab-panel.fb-panel .kpi-card::before { background: var(--fb-blue); }
+  .tab-panel.ig-panel .kpi-card:hover { border-color: rgba(225,48,108,0.35); }
+  .tab-panel.ig-panel .kpi-card::before { background: var(--ig); }
+  .tab-panel.hs-panel .kpi-card:hover { border-color: rgba(255,122,89,0.35); }
+  .tab-panel.hs-panel .kpi-card::before { background: var(--hs); }
+
+  .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .kpi-value { font-size: 24px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 4px; }
+  .kpi-sub { font-size: 11px; color: var(--muted); }
+  .kpi-note { font-size: 10px; color: #4a4a4a; margin-top: 6px; font-style: italic; }
+  .kpi-delta { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+  .kpi-delta.up { color: var(--green); }
+  .kpi-delta.down { color: var(--red-val); }
+
+  .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-full { grid-column: 1 / -1; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px 28px; }
+  .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .chart-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+  .chart-subtitle { font-size: 11px; color: var(--muted); }
+  .chart-total-value { font-size: 22px; font-weight: 700; line-height: 1; text-align: right; }
+  .tab-panel.fb-panel .chart-total-value { color: var(--red); }
+  .tab-panel.ig-panel .chart-total-value { color: var(--ig); }
+  .tab-panel.hs-panel .chart-total-value { color: var(--hs); }
+  .chart-total-label { font-size: 10px; color: var(--muted); margin-top: 2px; text-align: right; }
+  .chart-wrap { position: relative; height: 230px; }
+  .chart-wrap-tall { position: relative; height: 290px; }
+
+  .disclaimer { background: rgba(24,119,242,0.07); border: 1px solid rgba(24,119,242,0.18); border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #7ab8f5; margin-bottom: 32px; display: flex; gap: 10px; align-items: flex-start; line-height: 1.6; }
+  .disclaimer strong { color: #a8d4ff; }
+  .notice { background: rgba(225,48,108,0.07); border: 1px solid rgba(225,48,108,0.18); border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #f06090; margin-bottom: 32px; display: flex; gap: 10px; align-items: flex-start; line-height: 1.6; }
+  .notice strong { color: #ffaac8; }
+  .tab-panel.hs-panel .notice { background: rgba(255,122,89,0.07); border-color: rgba(255,122,89,0.2); color: #ffaa8a; }
+  .tab-panel.hs-panel .notice strong { color: #ffd0be; }
+
+  /* HubSpot specific */
+  .metric-row { margin-bottom: 18px; }
+  .metric-row:last-child { margin-bottom: 0; }
+  .metric-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .metric-row-label { font-size: 12px; color: var(--muted); }
+  .metric-row-val { font-size: 13px; font-weight: 700; }
+  .bar-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 7px; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .device-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+  .device-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; text-align: center; }
+  .device-icon { font-size: 26px; margin-bottom: 8px; }
+  .device-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 12px; }
+  .device-opens { font-size: 20px; font-weight: 700; color: #fff; }
+  .device-opens-label { font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+  .device-clicks { font-size: 16px; font-weight: 600; color: var(--hs); }
+  .device-clicks-label { font-size: 10px; color: var(--muted); }
+  .benchmark-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+  .benchmark-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px 28px; }
+  .benchmark-note { font-size: 11px; margin-top: 12px; }
+
+  /* FOOTER */
+  .footer { margin-top: 48px; padding: 22px 48px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-size: 12px; font-weight: 700; color: var(--red); letter-spacing: 0.1em; text-transform: uppercase; }
+  .footer-note { font-size: 11px; color: var(--muted); }
+
+  @media (max-width: 1100px) {
+    .kpi-strip, .kpi-strip-2, .kpi-strip-5 { grid-template-columns: repeat(2,1fr); }
+    .charts-grid, .benchmark-grid { grid-template-columns: 1fr; }
+    .chart-full { grid-column: auto; }
+    .header, .tab-nav, .main, .footer { padding-left: 24px; padding-right: 24px; }
+    .tab-btn { padding: 14px 16px; font-size: 12px; }
+    .device-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-dot"></div>
+    <span class="brand">Indie Group</span>
+    <span class="header-title">Social & E-mail Dashboard — Okt 2025 – Apr 2026</span>
+  </div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn fb active" onclick="switchTab('fb')">
+    <span class="tab-dot fb"></span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    Facebook Organic
+  </button>
+  <button class="tab-btn ig" onclick="switchTab('ig')">
+    <span class="tab-dot ig"></span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    Instagram Organic
+  </button>
+  <button class="tab-btn hs" onclick="switchTab('hs')">
+    <span class="tab-dot hs"></span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#FF7A59"><path d="M22.5 12c0 5.799-4.701 10.5-10.5 10.5S1.5 17.799 1.5 12 6.201 1.5 12 1.5 22.5 6.201 22.5 12zm-10.5 4.5c2.485 0 4.5-2.015 4.5-4.5S14.485 7.5 12 7.5 7.5 9.515 7.5 12s2.015 4.5 4.5 4.5z"/></svg>
+    HubSpot E-mail
+  </button>
+</nav>
+
+<!-- FACEBOOK TAB -->
+<div class="tab-panel fb-panel active" id="panel-fb">
+  <main class="main">
+
+
+  <div class="disclaimer">
+    <span>ℹ️</span>
+    <span><strong>Opmerking over weergaven:</strong> Van de 1,5 miljoen totale weergaven zijn er slechts <strong>28.394 organisch</strong> (1,9%). Het overgrote deel is paid bereik. Weergaven worden daarom enkel als totaalcijfer getoond. De grafieken tonen uitsluitend organische metrics.</span>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Weergaven organisch</div>
+      <div class="kpi-value">28.394</div>
+      <div class="kpi-sub">organisch bereik</div>
+      <div class="kpi-note">Excl. 1,48M paid weergaven</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Kijkers totaal</div>
+      <div class="kpi-value">220.644</div>
+      <div class="kpi-sub">unieke personen</div>
+      <div class="kpi-note">Incl. paid bereik</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Bezoeken</div>
+      <div class="kpi-value" id="fb-kpi-bezoeken">—</div>
+      <div class="kpi-sub">paginabezoeken</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Interacties</div>
+      <div class="kpi-value" id="fb-kpi-interacties">—</div>
+      <div class="kpi-sub">likes, reacties, shares</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Klikken op links</div>
+      <div class="kpi-value" id="fb-kpi-klikken">—</div>
+      <div class="kpi-sub">linkkliks in posts</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nieuwe volgers</div>
+      <div class="kpi-value" id="fb-kpi-volgers">—</div>
+      <div class="kpi-sub">aangroei publiek</div>
+    </div>
+  </div>
+
+  <p class="section-title">Evolutie per maand</p>
+
+  <div class="charts-grid">
+
+    <div class="chart-card chart-full">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Klikken op links</div>
+          <div class="chart-subtitle">Maandelijks totaal klikken op links in posts</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="fb-total-klikken">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap-tall"><canvas id="fb-chartKlikken"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Paginabezoeken</div>
+          <div class="chart-subtitle">Maandelijks totaal bezoeken aan de Facebook-pagina</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="fb-total-bezoeken">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="fb-chartBezoeken"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Interacties met content</div>
+          <div class="chart-subtitle">Maandelijks totaal likes, reacties en shares</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="fb-total-interacties">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="fb-chartInteracties"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Nieuwe volgers</div>
+          <div class="chart-subtitle">Maandelijkse aangroei van het publiek</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="fb-total-volgers">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="fb-chartVolgers"></canvas></div>
+    </div>
+
+  </div>
+
+  <p style="font-size:11px; color:#555; margin-top:8px;">* April 2026 t/m 7 april (onvolledige maand)</p>
+
+
+  </main>
+  <footer class="footer">
+    <div class="footer-brand">Indie Group</div>
+    <div class="footer-note">Databron: Meta Business Suite · Facebook · 1 okt 2025 – 7 apr 2026</div>
+  </footer>
+</div>
+
+<!-- INSTAGRAM TAB -->
+<div class="tab-panel ig-panel" id="panel-ig">
+  <main class="main">
+
+
+  <div class="disclaimer">
+    <span>ℹ️</span>
+    <span><strong>Opmerking over weergaven:</strong> Van de 421.022 totale weergaven zijn er slechts <strong>23.682 organisch</strong> (5,6%). Het overgrote deel is paid bereik. Weergaven worden daarom enkel als totaalcijfer getoond. Bereik wordt als KPI vermeld maar bevat eveneens een significant paid aandeel. De grafieken tonen uitsluitend organische metrics.</span>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Weergaven organisch</div>
+      <div class="kpi-value">23.682</div>
+      <div class="kpi-sub">organisch bereik</div>
+      <div class="kpi-note">Excl. 397.340 paid weergaven</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Bereik totaal</div>
+      <div class="kpi-value" id="ig-kpi-bereik">—</div>
+      <div class="kpi-sub">unieke accounts</div>
+      <div class="kpi-note">Incl. paid bereik</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Profielbezoeken</div>
+      <div class="kpi-value" id="ig-kpi-bezoeken">—</div>
+      <div class="kpi-sub">bezoeken aan profiel</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Interacties</div>
+      <div class="kpi-value" id="ig-kpi-interacties">—</div>
+      <div class="kpi-sub">likes, reacties, opslaan</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Klikken op link</div>
+      <div class="kpi-value" id="ig-kpi-klikken">—</div>
+      <div class="kpi-sub">linkkliks in bio/posts</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nieuwe volgers</div>
+      <div class="kpi-value" id="ig-kpi-volgers">—</div>
+      <div class="kpi-sub">aangroei publiek</div>
+    </div>
+  </div>
+
+  <p class="section-title">Evolutie per maand</p>
+
+  <div class="charts-grid">
+
+    <div class="chart-card chart-full">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Klikken op links</div>
+          <div class="chart-subtitle">Maandelijks totaal klikken op links in bio en posts</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="ig-total-klikken">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap-tall"><canvas id="ig-chartKlikken"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Profielbezoeken</div>
+          <div class="chart-subtitle">Maandelijks totaal bezoeken aan het Instagram-profiel</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="ig-total-bezoeken">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="ig-chartBezoeken"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Interacties met content</div>
+          <div class="chart-subtitle">Maandelijks totaal likes, reacties en opslaan</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="ig-total-interacties">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="ig-chartInteracties"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Nieuwe volgers</div>
+          <div class="chart-subtitle">Maandelijkse aangroei van het publiek</div>
+        </div>
+        <div>
+          <div class="chart-total-value" id="ig-total-volgers">—</div>
+          <div class="chart-total-label">totaal periode</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="ig-chartVolgers"></canvas></div>
+    </div>
+
+  </div>
+
+  <p style="font-size:11px; color:#555; margin-top:8px;">* April 2026 t/m 7 april (onvolledige maand)</p>
+
+
+  </main>
+  <footer class="footer">
+    <div class="footer-brand">Indie Group</div>
+    <div class="footer-note">Databron: Meta Business Suite · Instagram · 1 okt 2025 – 7 apr 2026</div>
+  </footer>
+</div>
+
+<!-- HUBSPOT TAB -->
+<div class="tab-panel hs-panel" id="panel-hs">
+  <main class="main">
+
+
+  <div class="notice">
+    <span>ℹ️</span>
+    <span><strong>Periode:</strong> 8 januari 2026 – 8 april 2026 (90 dagen) · <strong>20 e-mails</strong> manueel verstuurd · Vergelijking t.o.v. vorige 91 dagen. De pijltjes tonen de evolutie vs. de vorige periode.</span>
+  </div>
+
+  <!-- Interactie -->
+  <p class="section-title">Interactie ontvanger</p>
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Verzonden</div>
+      <div class="kpi-value">2.961</div>
+      <div class="kpi-sub">20 e-mails</div>
+      <div class="kpi-delta up">↑ 71,55% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Openingspercentage</div>
+      <div class="kpi-value">24,53%</div>
+      <div class="kpi-sub">725 geopend</div>
+      <div class="kpi-delta up">↑ 4,39% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Klikfrequentie</div>
+      <div class="kpi-value">2,57%</div>
+      <div class="kpi-sub">76 hebben geklikt</div>
+      <div class="kpi-delta down">↓ 33,35% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">CTA-klikfrequentie</div>
+      <div class="kpi-value">10,48%</div>
+      <div class="kpi-sub">CTA-klikken</div>
+      <div class="kpi-delta down">↓ 36,15% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Antwoordpercentage</div>
+      <div class="kpi-value">0,27%</div>
+      <div class="kpi-sub">8 hebben geantwoord</div>
+      <div class="kpi-delta up">↑ 54,35% vs vorige periode</div>
+    </div>
+  </div>
+
+  <!-- Bezorging -->
+  <p class="section-title">Bezorging & lijstgezondheid</p>
+  <div class="kpi-strip-2">
+    <div class="kpi-card">
+      <div class="kpi-label">Bezorgingspercentage</div>
+      <div class="kpi-value">99,83%</div>
+      <div class="kpi-sub">2.956 bezorgd</div>
+      <div class="kpi-delta up">↑ 0,71% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Hard bounces</div>
+      <div class="kpi-value">0,17%</div>
+      <div class="kpi-sub">permanent niet bezorgbaar</div>
+      <div class="kpi-delta up">↓ 79,18% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Afmeldingspercentage</div>
+      <div class="kpi-value">0,88%</div>
+      <div class="kpi-sub">afmeldingen</div>
+      <div class="kpi-delta down">↑ 31,59% vs vorige periode</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Spamklachten</div>
+      <div class="kpi-value">0%</div>
+      <div class="kpi-sub">geen spamklachten</div>
+      <div class="kpi-delta up">✓ Uitstekend</div>
+    </div>
+  </div>
+
+  <!-- Apparaat -->
+  <p class="section-title">Opens & clicks per apparaat</p>
+  <div class="device-grid">
+    <div class="device-card">
+      <div class="device-icon">🖥️</div>
+      <div class="device-label">Desktop</div>
+      <div class="device-opens">1.098</div>
+      <div class="device-opens-label">opens</div>
+      <div class="device-clicks">72</div>
+      <div class="device-clicks-label">clicks</div>
+    </div>
+    <div class="device-card">
+      <div class="device-icon">📱</div>
+      <div class="device-label">Mobiel</div>
+      <div class="device-opens">306</div>
+      <div class="device-opens-label">opens</div>
+      <div class="device-clicks">33</div>
+      <div class="device-clicks-label">clicks</div>
+    </div>
+    <div class="device-card">
+      <div class="device-icon">💻</div>
+      <div class="device-label">Overig</div>
+      <div class="device-opens">463</div>
+      <div class="device-opens-label">opens</div>
+      <div class="device-clicks">0</div>
+      <div class="device-clicks-label">clicks</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <p class="section-title">Visuele analyse</p>
+  <div class="charts-grid">
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Opens per apparaat</div>
+          <div class="chart-subtitle">Verdeling van 1.867 totale opens</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="hs-chartDeviceOpens"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Clicks per apparaat</div>
+          <div class="chart-subtitle">Verdeling van 105 totale clicks</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="hs-chartDeviceClicks"></canvas></div>
+    </div>
+
+    <div class="chart-card chart-full">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Bezorgings­metrics — visueel overzicht</div>
+          <div class="chart-subtitle">Alle percentages op schaal</div>
+        </div>
+      </div>
+      <div style="padding-top:8px;">
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">Bezorgingspercentage</span>
+            <span class="metric-row-val" style="color:#4ade80">99,83%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:99.83%;background:#4ade80"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">Openingspercentage</span>
+            <span class="metric-row-val" style="color:#FF7A59">24,53%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:24.53%;background:#FF7A59"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">CTA-klikfrequentie</span>
+            <span class="metric-row-val" style="color:#f0ad4e">10,48%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:10.48%;background:#f0ad4e"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">Klikfrequentie</span>
+            <span class="metric-row-val" style="color:#f0ad4e">2,57%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:2.57%;background:#f0ad4e"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">Afmeldingspercentage</span>
+            <span class="metric-row-val" style="color:#f87171">0,88%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:0.88%;background:#f87171"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">Hard bounces</span>
+            <span class="metric-row-val" style="color:#f87171">0,17%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:0.17%;background:#f87171"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-row-header">
+            <span class="metric-row-label">Spamklachten</span>
+            <span class="metric-row-val" style="color:#4ade80">0%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:0.1%;background:#4ade80"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Benchmark -->
+  <p class="section-title" style="margin-top:16px;">Vergelijking met industrie benchmark</p>
+  <div class="benchmark-grid">
+    <div class="benchmark-card">
+      <div class="chart-title" style="margin-bottom:18px;">Openingspercentage</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Jullie score</div>
+          <div style="font-size:22px;font-weight:700;color:#FF7A59">24,53%</div>
+        </div>
+        <div style="flex:1;">
+          <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:8px;margin-bottom:6px;">
+            <div style="width:90%;background:#FF7A59;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:8px;">
+            <div style="width:100%;background:rgba(255,255,255,0.15);height:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Industrie gem.</div>
+          <div style="font-size:18px;font-weight:600;color:#666">~20–25%*</div>
+        </div>
+      </div>
+      <p class="benchmark-note" style="color:#4ade80;">✓ Normaal tot goed voor B2B. Opgelet: benchmarks van 40%+ zijn sterk opgeblazen door Apple Mail Privacy Protection (phantom opens). Een gecorrigeerde B2B norm ligt op 20–25%.</p>
+    </div>
+    <div class="benchmark-card">
+      <div class="chart-title" style="margin-bottom:18px;">Klikfrequentie</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Jullie score</div>
+          <div style="font-size:22px;font-weight:700;color:#FF7A59">2,57%</div>
+        </div>
+        <div style="flex:1;">
+          <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:8px;margin-bottom:6px;">
+            <div style="width:51%;background:#f0ad4e;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:8px;">
+            <div style="width:100%;background:rgba(255,255,255,0.15);height:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Industrie gem.</div>
+          <div style="font-size:18px;font-weight:600;color:#666">~2–5%</div>
+        </div>
+      </div>
+      <p class="benchmark-note" style="color:#4ade80;">✓ Binnen het normale bereik voor B2B e-mailmarketing.</p>
+    </div>
+  </div>
+
+
+  </main>
+  <footer class="footer">
+    <div class="footer-brand">Indie Group</div>
+    <div class="footer-note">Databron: HubSpot E-mail Analytics · 8 jan 2026 – 8 apr 2026 · 20 manueel verstuurde e-mails</div>
+  </footer>
+</div>
+
+<script>
+// Tab switching
+let activeCharts = {};
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.querySelector('.tab-btn.' + tab).classList.add('active');
+  // Re-init charts for that tab if not yet done
+  if (!activeCharts[tab]) {
+    activeCharts[tab] = true;
+    if (tab === 'fb') initFB();
+    if (tab === 'ig') initIG();
+    if (tab === 'hs') initHS();
+  }
+}
+
+// ===================== FACEBOOK =====================
+function initFB() {
+
+const RAW = {"Volgers":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":0},{"date":"2025-10-03","value":0},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":0},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":0},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":0},{"date":"2025-10-14","value":0},{"date":"2025-10-15","value":0},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":0},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":1},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":0},{"date":"2025-10-25","value":0},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":0},{"date":"2025-10-28","value":0},{"date":"2025-10-29","value":0},{"date":"2025-10-30","value":0},{"date":"2025-10-31","value":53},{"date":"2025-11-01","value":9},{"date":"2025-11-02","value":6},{"date":"2025-11-03","value":2},{"date":"2025-11-04","value":2},{"date":"2025-11-05","value":0},{"date":"2025-11-06","value":0},{"date":"2025-11-07","value":0},{"date":"2025-11-08","value":0},{"date":"2025-11-09","value":0},{"date":"2025-11-10","value":0},{"date":"2025-11-11","value":1},{"date":"2025-11-12","value":7},{"date":"2025-11-13","value":3},{"date":"2025-11-14","value":1},{"date":"2025-11-15","value":0},{"date":"2025-11-16","value":1},{"date":"2025-11-17","value":1},{"date":"2025-11-18","value":0},{"date":"2025-11-19","value":1},{"date":"2025-11-20","value":1},{"date":"2025-11-21","value":0},{"date":"2025-11-22","value":1},{"date":"2025-11-23","value":2},{"date":"2025-11-24","value":0},{"date":"2025-11-25","value":0},{"date":"2025-11-26","value":1},{"date":"2025-11-27","value":1},{"date":"2025-11-28","value":2},{"date":"2025-11-29","value":1},{"date":"2025-11-30","value":0},{"date":"2025-12-01","value":0},{"date":"2025-12-02","value":7},{"date":"2025-12-03","value":1},{"date":"2025-12-04","value":1},{"date":"2025-12-05","value":0},{"date":"2025-12-06","value":1},{"date":"2025-12-07","value":0},{"date":"2025-12-08","value":1},{"date":"2025-12-09","value":1},{"date":"2025-12-10","value":1},{"date":"2025-12-11","value":0},{"date":"2025-12-12","value":0},{"date":"2025-12-13","value":1},{"date":"2025-12-14","value":0},{"date":"2025-12-15","value":0},{"date":"2025-12-16","value":3},{"date":"2025-12-17","value":1},{"date":"2025-12-18","value":0},{"date":"2025-12-19","value":0},{"date":"2025-12-20","value":0},{"date":"2025-12-21","value":1},{"date":"2025-12-22","value":1},{"date":"2025-12-23","value":1},{"date":"2025-12-24","value":1},{"date":"2025-12-25","value":0},{"date":"2025-12-26","value":0},{"date":"2025-12-27","value":0},{"date":"2025-12-28","value":0},{"date":"2025-12-29","value":1},{"date":"2025-12-30","value":1},{"date":"2025-12-31","value":1},{"date":"2026-01-01","value":2},{"date":"2026-01-02","value":1},{"date":"2026-01-03","value":0},{"date":"2026-01-04","value":1},{"date":"2026-01-05","value":1},{"date":"2026-01-06","value":11},{"date":"2026-01-07","value":0},{"date":"2026-01-08","value":1},{"date":"2026-01-09","value":2},{"date":"2026-01-10","value":0},{"date":"2026-01-11","value":1},{"date":"2026-01-12","value":2},{"date":"2026-01-13","value":0},{"date":"2026-01-14","value":1},{"date":"2026-01-15","value":1},{"date":"2026-01-16","value":1},{"date":"2026-01-17","value":0},{"date":"2026-01-18","value":0},{"date":"2026-01-19","value":0},{"date":"2026-01-20","value":0},{"date":"2026-01-21","value":0},{"date":"2026-01-22","value":1},{"date":"2026-01-23","value":0},{"date":"2026-01-24","value":0},{"date":"2026-01-25","value":0},{"date":"2026-01-26","value":0},{"date":"2026-01-27","value":1},{"date":"2026-01-28","value":20},{"date":"2026-01-29","value":7},{"date":"2026-01-30","value":1},{"date":"2026-01-31","value":2},{"date":"2026-02-01","value":1},{"date":"2026-02-02","value":2},{"date":"2026-02-03","value":0},{"date":"2026-02-04","value":1},{"date":"2026-02-05","value":1},{"date":"2026-02-06","value":2},{"date":"2026-02-07","value":0},{"date":"2026-02-08","value":1},{"date":"2026-02-09","value":0},{"date":"2026-02-10","value":0},{"date":"2026-02-11","value":0},{"date":"2026-02-12","value":1},{"date":"2026-02-13","value":0},{"date":"2026-02-14","value":0},{"date":"2026-02-15","value":0},{"date":"2026-02-16","value":3},{"date":"2026-02-17","value":1},{"date":"2026-02-18","value":0},{"date":"2026-02-19","value":1},{"date":"2026-02-20","value":0},{"date":"2026-02-21","value":0},{"date":"2026-02-22","value":0},{"date":"2026-02-23","value":0},{"date":"2026-02-24","value":1},{"date":"2026-02-25","value":0},{"date":"2026-02-26","value":0},{"date":"2026-02-27","value":0},{"date":"2026-02-28","value":0},{"date":"2026-03-01","value":0},{"date":"2026-03-02","value":0},{"date":"2026-03-03","value":0},{"date":"2026-03-04","value":0},{"date":"2026-03-05","value":0},{"date":"2026-03-06","value":1},{"date":"2026-03-07","value":0},{"date":"2026-03-08","value":0},{"date":"2026-03-09","value":0},{"date":"2026-03-10","value":3},{"date":"2026-03-11","value":0},{"date":"2026-03-12","value":0},{"date":"2026-03-13","value":0},{"date":"2026-03-14","value":0},{"date":"2026-03-15","value":0},{"date":"2026-03-16","value":0},{"date":"2026-03-17","value":0},{"date":"2026-03-18","value":1},{"date":"2026-03-19","value":4},{"date":"2026-03-20","value":4},{"date":"2026-03-21","value":8},{"date":"2026-03-22","value":10},{"date":"2026-03-23","value":7},{"date":"2026-03-24","value":6},{"date":"2026-03-25","value":12},{"date":"2026-03-26","value":5},{"date":"2026-03-27","value":4},{"date":"2026-03-28","value":7},{"date":"2026-03-29","value":8},{"date":"2026-03-30","value":6},{"date":"2026-03-31","value":2},{"date":"2026-04-01","value":5},{"date":"2026-04-02","value":7},{"date":"2026-04-03","value":4},{"date":"2026-04-04","value":6},{"date":"2026-04-05","value":2},{"date":"2026-04-06","value":2},{"date":"2026-04-07","value":1}],"Bezoeken":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":3},{"date":"2025-10-03","value":6},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":3},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":0},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":7},{"date":"2025-10-14","value":0},{"date":"2025-10-15","value":2},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":13},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":0},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":24},{"date":"2025-10-25","value":5},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":1},{"date":"2025-10-28","value":0},{"date":"2025-10-29","value":0},{"date":"2025-10-30","value":4},{"date":"2025-10-31","value":293},{"date":"2025-11-01","value":103},{"date":"2025-11-02","value":38},{"date":"2025-11-03","value":30},{"date":"2025-11-04","value":3},{"date":"2025-11-05","value":16},{"date":"2025-11-06","value":3},{"date":"2025-11-07","value":3},{"date":"2025-11-08","value":2},{"date":"2025-11-09","value":3},{"date":"2025-11-10","value":0},{"date":"2025-11-11","value":6},{"date":"2025-11-12","value":142},{"date":"2025-11-13","value":83},{"date":"2025-11-14","value":49},{"date":"2025-11-15","value":15},{"date":"2025-11-16","value":29},{"date":"2025-11-17","value":9},{"date":"2025-11-18","value":46},{"date":"2025-11-19","value":23},{"date":"2025-11-20","value":32},{"date":"2025-11-21","value":29},{"date":"2025-11-22","value":16},{"date":"2025-11-23","value":57},{"date":"2025-11-24","value":9},{"date":"2025-11-25","value":6},{"date":"2025-11-26","value":10},{"date":"2025-11-27","value":78},{"date":"2025-11-28","value":44},{"date":"2025-11-29","value":38},{"date":"2025-11-30","value":20},{"date":"2025-12-01","value":19},{"date":"2025-12-02","value":48},{"date":"2025-12-03","value":33},{"date":"2025-12-04","value":36},{"date":"2025-12-05","value":46},{"date":"2025-12-06","value":18},{"date":"2025-12-07","value":13},{"date":"2025-12-08","value":38},{"date":"2025-12-09","value":29},{"date":"2025-12-10","value":15},{"date":"2025-12-11","value":45},{"date":"2025-12-12","value":8},{"date":"2025-12-13","value":1},{"date":"2025-12-14","value":15},{"date":"2025-12-15","value":4},{"date":"2025-12-16","value":125},{"date":"2025-12-17","value":67},{"date":"2025-12-18","value":25},{"date":"2025-12-19","value":39},{"date":"2025-12-20","value":12},{"date":"2025-12-21","value":32},{"date":"2025-12-22","value":19},{"date":"2025-12-23","value":29},{"date":"2025-12-24","value":16},{"date":"2025-12-25","value":27},{"date":"2025-12-26","value":24},{"date":"2025-12-27","value":12},{"date":"2025-12-28","value":19},{"date":"2025-12-29","value":35},{"date":"2025-12-30","value":60},{"date":"2025-12-31","value":16},{"date":"2026-01-01","value":33},{"date":"2026-01-02","value":35},{"date":"2026-01-03","value":55},{"date":"2026-01-04","value":26},{"date":"2026-01-05","value":48},{"date":"2026-01-06","value":197},{"date":"2026-01-07","value":76},{"date":"2026-01-08","value":31},{"date":"2026-01-09","value":65},{"date":"2026-01-10","value":9},{"date":"2026-01-11","value":23},{"date":"2026-01-12","value":28},{"date":"2026-01-13","value":40},{"date":"2026-01-14","value":29},{"date":"2026-01-15","value":48},{"date":"2026-01-16","value":40},{"date":"2026-01-17","value":26},{"date":"2026-01-18","value":23},{"date":"2026-01-19","value":34},{"date":"2026-01-20","value":22},{"date":"2026-01-21","value":16},{"date":"2026-01-22","value":19},{"date":"2026-01-23","value":26},{"date":"2026-01-24","value":30},{"date":"2026-01-25","value":6},{"date":"2026-01-26","value":12},{"date":"2026-01-27","value":26},{"date":"2026-01-28","value":149},{"date":"2026-01-29","value":105},{"date":"2026-01-30","value":79},{"date":"2026-01-31","value":51},{"date":"2026-02-01","value":42},{"date":"2026-02-02","value":63},{"date":"2026-02-03","value":38},{"date":"2026-02-04","value":39},{"date":"2026-02-05","value":38},{"date":"2026-02-06","value":39},{"date":"2026-02-07","value":22},{"date":"2026-02-08","value":25},{"date":"2026-02-09","value":13},{"date":"2026-02-10","value":29},{"date":"2026-02-11","value":16},{"date":"2026-02-12","value":13},{"date":"2026-02-13","value":15},{"date":"2026-02-14","value":11},{"date":"2026-02-15","value":8},{"date":"2026-02-16","value":25},{"date":"2026-02-17","value":24},{"date":"2026-02-18","value":20},{"date":"2026-02-19","value":9},{"date":"2026-02-20","value":14},{"date":"2026-02-21","value":4},{"date":"2026-02-22","value":3},{"date":"2026-02-23","value":12},{"date":"2026-02-24","value":18},{"date":"2026-02-25","value":23},{"date":"2026-02-26","value":23},{"date":"2026-02-27","value":5},{"date":"2026-02-28","value":10},{"date":"2026-03-01","value":0},{"date":"2026-03-02","value":6},{"date":"2026-03-03","value":13},{"date":"2026-03-04","value":9},{"date":"2026-03-05","value":7},{"date":"2026-03-06","value":12},{"date":"2026-03-07","value":6},{"date":"2026-03-08","value":10},{"date":"2026-03-09","value":9},{"date":"2026-03-10","value":22},{"date":"2026-03-11","value":9},{"date":"2026-03-12","value":10},{"date":"2026-03-13","value":6},{"date":"2026-03-14","value":9},{"date":"2026-03-15","value":11},{"date":"2026-03-16","value":20},{"date":"2026-03-17","value":3},{"date":"2026-03-18","value":100},{"date":"2026-03-19","value":75},{"date":"2026-03-20","value":63},{"date":"2026-03-21","value":87},{"date":"2026-03-22","value":81},{"date":"2026-03-23","value":73},{"date":"2026-03-24","value":99},{"date":"2026-03-25","value":111},{"date":"2026-03-26","value":125},{"date":"2026-03-27","value":85},{"date":"2026-03-28","value":71},{"date":"2026-03-29","value":89},{"date":"2026-03-30","value":96},{"date":"2026-03-31","value":87},{"date":"2026-04-01","value":110},{"date":"2026-04-02","value":97},{"date":"2026-04-03","value":56},{"date":"2026-04-04","value":66},{"date":"2026-04-05","value":55},{"date":"2026-04-06","value":70},{"date":"2026-04-07","value":36}],"Klikken op link":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":0},{"date":"2025-10-03","value":0},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":0},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":0},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":0},{"date":"2025-10-14","value":0},{"date":"2025-10-15","value":0},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":0},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":0},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":0},{"date":"2025-10-25","value":0},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":0},{"date":"2025-10-28","value":0},{"date":"2025-10-29","value":0},{"date":"2025-10-30","value":0},{"date":"2025-10-31","value":57},{"date":"2025-11-01","value":69},{"date":"2025-11-02","value":43},{"date":"2025-11-03","value":4},{"date":"2025-11-04","value":0},{"date":"2025-11-05","value":1},{"date":"2025-11-06","value":0},{"date":"2025-11-07","value":0},{"date":"2025-11-08","value":0},{"date":"2025-11-09","value":0},{"date":"2025-11-10","value":0},{"date":"2025-11-11","value":0},{"date":"2025-11-12","value":88},{"date":"2025-11-13","value":100},{"date":"2025-11-14","value":62},{"date":"2025-11-15","value":67},{"date":"2025-11-16","value":71},{"date":"2025-11-17","value":60},{"date":"2025-11-18","value":62},{"date":"2025-11-19","value":61},{"date":"2025-11-20","value":54},{"date":"2025-11-21","value":66},{"date":"2025-11-22","value":63},{"date":"2025-11-23","value":82},{"date":"2025-11-24","value":64},{"date":"2025-11-25","value":61},{"date":"2025-11-26","value":54},{"date":"2025-11-27","value":71},{"date":"2025-11-28","value":55},{"date":"2025-11-29","value":58},{"date":"2025-11-30","value":58},{"date":"2025-12-01","value":77},{"date":"2025-12-02","value":87},{"date":"2025-12-03","value":56},{"date":"2025-12-04","value":52},{"date":"2025-12-05","value":59},{"date":"2025-12-06","value":77},{"date":"2025-12-07","value":47},{"date":"2025-12-08","value":89},{"date":"2025-12-09","value":56},{"date":"2025-12-10","value":19},{"date":"2025-12-11","value":0},{"date":"2025-12-12","value":0},{"date":"2025-12-13","value":0},{"date":"2025-12-14","value":0},{"date":"2025-12-15","value":0},{"date":"2025-12-16","value":60},{"date":"2025-12-17","value":84},{"date":"2025-12-18","value":44},{"date":"2025-12-19","value":49},{"date":"2025-12-20","value":22},{"date":"2025-12-21","value":19},{"date":"2025-12-22","value":8},{"date":"2025-12-23","value":9},{"date":"2025-12-24","value":3},{"date":"2025-12-25","value":1},{"date":"2025-12-26","value":2},{"date":"2025-12-27","value":2},{"date":"2025-12-28","value":3},{"date":"2025-12-29","value":4},{"date":"2025-12-30","value":28},{"date":"2025-12-31","value":12},{"date":"2026-01-01","value":17},{"date":"2026-01-02","value":13},{"date":"2026-01-03","value":23},{"date":"2026-01-04","value":26},{"date":"2026-01-05","value":91},{"date":"2026-01-06","value":109},{"date":"2026-01-07","value":139},{"date":"2026-01-08","value":128},{"date":"2026-01-09","value":165},{"date":"2026-01-10","value":162},{"date":"2026-01-11","value":160},{"date":"2026-01-12","value":150},{"date":"2026-01-13","value":165},{"date":"2026-01-14","value":169},{"date":"2026-01-15","value":176},{"date":"2026-01-16","value":160},{"date":"2026-01-17","value":145},{"date":"2026-01-18","value":143},{"date":"2026-01-19","value":115},{"date":"2026-01-20","value":97},{"date":"2026-01-21","value":113},{"date":"2026-01-22","value":76},{"date":"2026-01-23","value":155},{"date":"2026-01-24","value":151},{"date":"2026-01-25","value":142},{"date":"2026-01-26","value":143},{"date":"2026-01-27","value":121},{"date":"2026-01-28","value":97},{"date":"2026-01-29","value":96},{"date":"2026-01-30","value":107},{"date":"2026-01-31","value":120},{"date":"2026-02-01","value":132},{"date":"2026-02-02","value":134},{"date":"2026-02-03","value":110},{"date":"2026-02-04","value":107},{"date":"2026-02-05","value":90},{"date":"2026-02-06","value":97},{"date":"2026-02-07","value":108},{"date":"2026-02-08","value":81},{"date":"2026-02-09","value":66},{"date":"2026-02-10","value":68},{"date":"2026-02-11","value":81},{"date":"2026-02-12","value":91},{"date":"2026-02-13","value":97},{"date":"2026-02-14","value":81},{"date":"2026-02-15","value":116},{"date":"2026-02-16","value":93},{"date":"2026-02-17","value":92},{"date":"2026-02-18","value":82},{"date":"2026-02-19","value":89},{"date":"2026-02-20","value":100},{"date":"2026-02-21","value":81},{"date":"2026-02-22","value":88},{"date":"2026-02-23","value":60},{"date":"2026-02-24","value":73},{"date":"2026-02-25","value":69},{"date":"2026-02-26","value":62},{"date":"2026-02-27","value":36},{"date":"2026-02-28","value":7},{"date":"2026-03-01","value":0},{"date":"2026-03-02","value":31},{"date":"2026-03-03","value":30},{"date":"2026-03-04","value":25},{"date":"2026-03-05","value":34},{"date":"2026-03-06","value":29},{"date":"2026-03-07","value":24},{"date":"2026-03-08","value":29},{"date":"2026-03-09","value":41},{"date":"2026-03-10","value":37},{"date":"2026-03-11","value":22},{"date":"2026-03-12","value":41},{"date":"2026-03-13","value":21},{"date":"2026-03-14","value":32},{"date":"2026-03-15","value":31},{"date":"2026-03-16","value":33},{"date":"2026-03-17","value":37},{"date":"2026-03-18","value":72},{"date":"2026-03-19","value":51},{"date":"2026-03-20","value":53},{"date":"2026-03-21","value":61},{"date":"2026-03-22","value":60},{"date":"2026-03-23","value":64},{"date":"2026-03-24","value":59},{"date":"2026-03-25","value":65},{"date":"2026-03-26","value":103},{"date":"2026-03-27","value":85},{"date":"2026-03-28","value":74},{"date":"2026-03-29","value":97},{"date":"2026-03-30","value":101},{"date":"2026-03-31","value":67},{"date":"2026-04-01","value":93},{"date":"2026-04-02","value":73},{"date":"2026-04-03","value":53},{"date":"2026-04-04","value":92},{"date":"2026-04-05","value":68},{"date":"2026-04-06","value":64},{"date":"2026-04-07","value":56}],"Interacties":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":0},{"date":"2025-10-03","value":0},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":0},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":0},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":0},{"date":"2025-10-14","value":0},{"date":"2025-10-15","value":0},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":0},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":0},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":1},{"date":"2025-10-25","value":0},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":0},{"date":"2025-10-28","value":0},{"date":"2025-10-29","value":0},{"date":"2025-10-30","value":0},{"date":"2025-10-31","value":15},{"date":"2025-11-01","value":2},{"date":"2025-11-02","value":2},{"date":"2025-11-03","value":0},{"date":"2025-11-04","value":0},{"date":"2025-11-05","value":3},{"date":"2025-11-06","value":1},{"date":"2025-11-07","value":0},{"date":"2025-11-08","value":0},{"date":"2025-11-09","value":0},{"date":"2025-11-10","value":0},{"date":"2025-11-11","value":0},{"date":"2025-11-12","value":27},{"date":"2025-11-13","value":36},{"date":"2025-11-14","value":12},{"date":"2025-11-15","value":4},{"date":"2025-11-16","value":4},{"date":"2025-11-17","value":2},{"date":"2025-11-18","value":2},{"date":"2025-11-19","value":0},{"date":"2025-11-20","value":1},{"date":"2025-11-21","value":8},{"date":"2025-11-22","value":4},{"date":"2025-11-23","value":1},{"date":"2025-11-24","value":0},{"date":"2025-11-25","value":3},{"date":"2025-11-26","value":2},{"date":"2025-11-27","value":46},{"date":"2025-11-28","value":8},{"date":"2025-11-29","value":3},{"date":"2025-11-30","value":3},{"date":"2025-12-01","value":3},{"date":"2025-12-02","value":48},{"date":"2025-12-03","value":21},{"date":"2025-12-04","value":43},{"date":"2025-12-05","value":36},{"date":"2025-12-06","value":46},{"date":"2025-12-07","value":35},{"date":"2025-12-08","value":27},{"date":"2025-12-09","value":18},{"date":"2025-12-10","value":6},{"date":"2025-12-11","value":1},{"date":"2025-12-12","value":0},{"date":"2025-12-13","value":0},{"date":"2025-12-14","value":1},{"date":"2025-12-15","value":0},{"date":"2025-12-16","value":6},{"date":"2025-12-17","value":5},{"date":"2025-12-18","value":3},{"date":"2025-12-19","value":2},{"date":"2025-12-20","value":4},{"date":"2025-12-21","value":1},{"date":"2025-12-22","value":2},{"date":"2025-12-23","value":9},{"date":"2025-12-24","value":8},{"date":"2025-12-25","value":2},{"date":"2025-12-26","value":0},{"date":"2025-12-27","value":1},{"date":"2025-12-28","value":2},{"date":"2025-12-29","value":5},{"date":"2025-12-30","value":6},{"date":"2025-12-31","value":2},{"date":"2026-01-01","value":4},{"date":"2026-01-02","value":2},{"date":"2026-01-03","value":3},{"date":"2026-01-04","value":3},{"date":"2026-01-05","value":6},{"date":"2026-01-06","value":18},{"date":"2026-01-07","value":3},{"date":"2026-01-08","value":9},{"date":"2026-01-09","value":8},{"date":"2026-01-10","value":2},{"date":"2026-01-11","value":6},{"date":"2026-01-12","value":2},{"date":"2026-01-13","value":9},{"date":"2026-01-14","value":8},{"date":"2026-01-15","value":12},{"date":"2026-01-16","value":7},{"date":"2026-01-17","value":7},{"date":"2026-01-18","value":10},{"date":"2026-01-19","value":19},{"date":"2026-01-20","value":11},{"date":"2026-01-21","value":7},{"date":"2026-01-22","value":2},{"date":"2026-01-23","value":6},{"date":"2026-01-24","value":5},{"date":"2026-01-25","value":7},{"date":"2026-01-26","value":10},{"date":"2026-01-27","value":4},{"date":"2026-01-28","value":10},{"date":"2026-01-29","value":9},{"date":"2026-01-30","value":18},{"date":"2026-01-31","value":6},{"date":"2026-02-01","value":8},{"date":"2026-02-02","value":12},{"date":"2026-02-03","value":12},{"date":"2026-02-04","value":9},{"date":"2026-02-05","value":7},{"date":"2026-02-06","value":5},{"date":"2026-02-07","value":3},{"date":"2026-02-08","value":0},{"date":"2026-02-09","value":1},{"date":"2026-02-10","value":1},{"date":"2026-02-11","value":8},{"date":"2026-02-12","value":2},{"date":"2026-02-13","value":3},{"date":"2026-02-14","value":4},{"date":"2026-02-15","value":3},{"date":"2026-02-16","value":2},{"date":"2026-02-17","value":4},{"date":"2026-02-18","value":2},{"date":"2026-02-19","value":2},{"date":"2026-02-20","value":3},{"date":"2026-02-21","value":1},{"date":"2026-02-22","value":1},{"date":"2026-02-23","value":6},{"date":"2026-02-24","value":4},{"date":"2026-02-25","value":4},{"date":"2026-02-26","value":2},{"date":"2026-02-27","value":2},{"date":"2026-02-28","value":0},{"date":"2026-03-01","value":0},{"date":"2026-03-02","value":7},{"date":"2026-03-03","value":2},{"date":"2026-03-04","value":5},{"date":"2026-03-05","value":3},{"date":"2026-03-06","value":3},{"date":"2026-03-07","value":4},{"date":"2026-03-08","value":2},{"date":"2026-03-09","value":1},{"date":"2026-03-10","value":2},{"date":"2026-03-11","value":12},{"date":"2026-03-12","value":2},{"date":"2026-03-13","value":1},{"date":"2026-03-14","value":0},{"date":"2026-03-15","value":1},{"date":"2026-03-16","value":0},{"date":"2026-03-17","value":1},{"date":"2026-03-18","value":21},{"date":"2026-03-19","value":10},{"date":"2026-03-20","value":7},{"date":"2026-03-21","value":8},{"date":"2026-03-22","value":3},{"date":"2026-03-23","value":7},{"date":"2026-03-24","value":1},{"date":"2026-03-25","value":13},{"date":"2026-03-26","value":6},{"date":"2026-03-27","value":12},{"date":"2026-03-28","value":3},{"date":"2026-03-29","value":5},{"date":"2026-03-30","value":13},{"date":"2026-03-31","value":7},{"date":"2026-04-01","value":5},{"date":"2026-04-02","value":8},{"date":"2026-04-03","value":1},{"date":"2026-04-04","value":2},{"date":"2026-04-05","value":4},{"date":"2026-04-06","value":4},{"date":"2026-04-07","value":3}]};
+
+const MONTHS = [
+  { key: '2025-10', label: 'Okt' },
+  { key: '2025-11', label: 'Nov' },
+  { key: '2025-12', label: 'Dec' },
+  { key: '2026-01', label: 'Jan' },
+  { key: '2026-02', label: 'Feb' },
+  { key: '2026-03', label: 'Mrt' },
+  { key: '2026-04', label: 'Apr*' },
+];
+
+function monthTotals(key) {
+  return MONTHS.map(m => RAW[key].filter(r => r.date.startsWith(m.key)).reduce((s,r)=>s+r.value,0));
+}
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toLocaleString('nl-BE');
+}
+
+document.getElementById('fb-kpi-bezoeken').textContent = fmt(RAW['Bezoeken'].reduce((s,r)=>s+r.value,0));
+document.getElementById('fb-kpi-interacties').textContent = fmt(RAW['Interacties'].reduce((s,r)=>s+r.value,0));
+document.getElementById('fb-kpi-klikken').textContent = fmt(RAW['Klikken op link'].reduce((s,r)=>s+r.value,0));
+document.getElementById('fb-kpi-volgers').textContent = fmt(RAW['Volgers'].reduce((s,r)=>s+r.value,0));
+
+const LABELS = MONTHS.map(m => m.label);
+
+const baseOpts = () => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1a1a1a',
+      titleColor: '#999',
+      bodyColor: '#fff',
+      borderColor: 'rgba(255,255,255,0.08)',
+      borderWidth: 1,
+      padding: 12,
+      callbacks: { label: item => '  ' + item.raw.toLocaleString('nl-BE') }
+    }
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: '#666', font: { size: 12, family: 'Poppins', weight: '500' } },
+      border: { color: 'rgba(255,255,255,0.06)' }
+    },
+    y: {
+      grid: { color: 'rgba(255,255,255,0.04)' },
+      ticks: { color: '#555', font: { size: 11, family: 'Poppins' }, callback: v => fmt(v) },
+      border: { display: false }
+    }
+  }
+});
+
+function buildBar(id, key, baseColor, totalId) {
+  const values = monthTotals(key);
+  document.getElementById(totalId).textContent = fmt(values.reduce((s,v)=>s+v,0));
+  const n = values.length;
+  // Gradient opacity: older months muted, recent months vivid
+  const bgColors = values.map((_, i) => {
+    const t = i / (n - 1);
+    const alpha = Math.round((0.3 + t * 0.7) * 255).toString(16).padStart(2,'0');
+    return baseColor + alpha;
+  });
+  const hoverColors = values.map((_, i) => {
+    const t = i / (n - 1);
+    const alpha = Math.round((0.5 + t * 0.5) * 255).toString(16).padStart(2,'0');
+    return baseColor + alpha;
+  });
+
+  new Chart(document.getElementById(id).getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: LABELS,
+      datasets: [{
+        data: values,
+        backgroundColor: bgColors,
+        hoverBackgroundColor: hoverColors,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: baseOpts()
+  });
+}
+
+buildBar('fb-chartKlikken',    'Klikken op link', '#e90100', 'fb-total-klikken');
+buildBar('fb-chartBezoeken',   'Bezoeken',        '#1877F2', 'fb-total-bezoeken');
+buildBar('fb-chartInteracties','Interacties',     '#f59e0b', 'fb-total-interacties');
+buildBar('fb-chartVolgers',    'Volgers',         '#10b981', 'fb-total-volgers');
+
+}
+
+// ===================== INSTAGRAM =====================
+function initIG() {
+
+const RAW = {"Volgers":[{"date":"2025-10-20","value":2},{"date":"2025-10-22","value":3},{"date":"2025-10-24","value":1},{"date":"2025-10-28","value":1},{"date":"2025-10-31","value":3},{"date":"2025-11-01","value":4},{"date":"2025-11-02","value":1},{"date":"2025-11-06","value":1},{"date":"2025-11-14","value":3},{"date":"2025-11-18","value":1},{"date":"2025-11-20","value":2},{"date":"2025-11-23","value":1},{"date":"2025-11-24","value":3},{"date":"2025-11-28","value":5},{"date":"2025-11-29","value":3},{"date":"2025-12-01","value":1},{"date":"2025-12-03","value":1},{"date":"2025-12-05","value":1},{"date":"2025-12-07","value":1},{"date":"2025-12-08","value":2},{"date":"2025-12-10","value":1},{"date":"2025-12-16","value":1},{"date":"2025-12-17","value":4},{"date":"2025-12-22","value":1},{"date":"2025-12-27","value":1},{"date":"2025-12-28","value":4},{"date":"2025-12-29","value":2},{"date":"2025-12-31","value":1},{"date":"2026-01-02","value":1},{"date":"2026-01-03","value":1},{"date":"2026-01-05","value":2},{"date":"2026-01-08","value":1},{"date":"2026-01-10","value":1},{"date":"2026-01-11","value":3},{"date":"2026-01-13","value":1},{"date":"2026-01-14","value":1},{"date":"2026-01-16","value":4},{"date":"2026-01-17","value":1},{"date":"2026-01-18","value":4},{"date":"2026-01-19","value":3},{"date":"2026-01-20","value":2},{"date":"2026-01-21","value":1},{"date":"2026-01-22","value":1},{"date":"2026-01-30","value":1},{"date":"2026-01-31","value":1},{"date":"2026-02-02","value":1},{"date":"2026-02-03","value":1},{"date":"2026-02-04","value":1},{"date":"2026-02-05","value":1},{"date":"2026-02-08","value":2},{"date":"2026-02-09","value":1},{"date":"2026-02-10","value":2},{"date":"2026-02-11","value":1},{"date":"2026-02-13","value":4},{"date":"2026-02-14","value":3},{"date":"2026-02-15","value":2},{"date":"2026-02-16","value":4},{"date":"2026-02-17","value":4},{"date":"2026-02-18","value":2},{"date":"2026-02-19","value":2},{"date":"2026-02-20","value":4},{"date":"2026-02-21","value":3},{"date":"2026-02-22","value":2},{"date":"2026-02-23","value":1},{"date":"2026-02-24","value":1},{"date":"2026-02-25","value":7},{"date":"2026-02-26","value":1},{"date":"2026-03-01","value":1},{"date":"2026-03-03","value":2},{"date":"2026-03-04","value":4},{"date":"2026-03-05","value":1},{"date":"2026-03-06","value":2},{"date":"2026-03-08","value":2},{"date":"2026-03-10","value":1},{"date":"2026-03-12","value":2},{"date":"2026-03-13","value":1},{"date":"2026-03-14","value":1},{"date":"2026-03-15","value":1},{"date":"2026-03-18","value":2},{"date":"2026-03-19","value":5},{"date":"2026-03-20","value":2},{"date":"2026-03-21","value":5},{"date":"2026-03-22","value":7},{"date":"2026-03-23","value":7},{"date":"2026-03-24","value":6},{"date":"2026-03-25","value":4},{"date":"2026-03-26","value":5},{"date":"2026-03-27","value":5},{"date":"2026-03-28","value":2},{"date":"2026-03-29","value":5},{"date":"2026-03-30","value":2},{"date":"2026-03-31","value":3},{"date":"2026-04-01","value":4},{"date":"2026-04-02","value":4},{"date":"2026-04-03","value":4},{"date":"2026-04-04","value":1}],"Bezoeken":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":0},{"date":"2025-10-03","value":0},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":0},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":2},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":0},{"date":"2025-10-14","value":1},{"date":"2025-10-15","value":0},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":3},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":6},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":3},{"date":"2025-10-25","value":0},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":0},{"date":"2025-10-28","value":2},{"date":"2025-10-29","value":1},{"date":"2025-10-30","value":1},{"date":"2025-10-31","value":65},{"date":"2025-11-01","value":25},{"date":"2025-11-02","value":6},{"date":"2025-11-03","value":6},{"date":"2025-11-04","value":2},{"date":"2025-11-05","value":10},{"date":"2025-11-06","value":6},{"date":"2025-11-07","value":4},{"date":"2025-11-08","value":69},{"date":"2025-11-09","value":29},{"date":"2025-11-10","value":3},{"date":"2025-11-11","value":2},{"date":"2025-11-12","value":9},{"date":"2025-11-13","value":8},{"date":"2025-11-14","value":12},{"date":"2025-11-15","value":5},{"date":"2025-11-16","value":3},{"date":"2025-11-17","value":7},{"date":"2025-11-18","value":3},{"date":"2025-11-19","value":4},{"date":"2025-11-20","value":3},{"date":"2025-11-21","value":4},{"date":"2025-11-22","value":5},{"date":"2025-11-23","value":18},{"date":"2025-11-24","value":12},{"date":"2025-11-25","value":11},{"date":"2025-11-26","value":3},{"date":"2025-11-27","value":1},{"date":"2025-11-28","value":78},{"date":"2025-11-29","value":17},{"date":"2025-11-30","value":10},{"date":"2025-12-01","value":7},{"date":"2025-12-02","value":13},{"date":"2025-12-03","value":6},{"date":"2025-12-04","value":8},{"date":"2025-12-05","value":7},{"date":"2025-12-06","value":4},{"date":"2025-12-07","value":12},{"date":"2025-12-08","value":10},{"date":"2025-12-09","value":8},{"date":"2025-12-10","value":7},{"date":"2025-12-11","value":5},{"date":"2025-12-12","value":1},{"date":"2025-12-13","value":7},{"date":"2025-12-14","value":3},{"date":"2025-12-15","value":3},{"date":"2025-12-16","value":13},{"date":"2025-12-17","value":13},{"date":"2025-12-18","value":6},{"date":"2025-12-19","value":8},{"date":"2025-12-20","value":7},{"date":"2025-12-21","value":4},{"date":"2025-12-22","value":7},{"date":"2025-12-23","value":3},{"date":"2025-12-24","value":8},{"date":"2025-12-25","value":6},{"date":"2025-12-26","value":3},{"date":"2025-12-27","value":4},{"date":"2025-12-28","value":6},{"date":"2025-12-29","value":8},{"date":"2025-12-30","value":10},{"date":"2025-12-31","value":4},{"date":"2026-01-01","value":8},{"date":"2026-01-02","value":5},{"date":"2026-01-03","value":5},{"date":"2026-01-04","value":6},{"date":"2026-01-05","value":18},{"date":"2026-01-06","value":5},{"date":"2026-01-07","value":3},{"date":"2026-01-08","value":8},{"date":"2026-01-09","value":7},{"date":"2026-01-10","value":7},{"date":"2026-01-11","value":12},{"date":"2026-01-12","value":6},{"date":"2026-01-13","value":13},{"date":"2026-01-14","value":20},{"date":"2026-01-15","value":21},{"date":"2026-01-16","value":16},{"date":"2026-01-17","value":21},{"date":"2026-01-18","value":20},{"date":"2026-01-19","value":26},{"date":"2026-01-20","value":10},{"date":"2026-01-21","value":7},{"date":"2026-01-22","value":6},{"date":"2026-01-23","value":5},{"date":"2026-01-24","value":3},{"date":"2026-01-25","value":5},{"date":"2026-01-26","value":6},{"date":"2026-01-27","value":3},{"date":"2026-01-28","value":10},{"date":"2026-01-29","value":6},{"date":"2026-01-30","value":8},{"date":"2026-01-31","value":9},{"date":"2026-02-01","value":8},{"date":"2026-02-02","value":12},{"date":"2026-02-03","value":8},{"date":"2026-02-04","value":7},{"date":"2026-02-05","value":7},{"date":"2026-02-06","value":5},{"date":"2026-02-07","value":15},{"date":"2026-02-08","value":5},{"date":"2026-02-09","value":8},{"date":"2026-02-10","value":11},{"date":"2026-02-11","value":4},{"date":"2026-02-12","value":8},{"date":"2026-02-13","value":16},{"date":"2026-02-14","value":10},{"date":"2026-02-15","value":15},{"date":"2026-02-16","value":17},{"date":"2026-02-17","value":21},{"date":"2026-02-18","value":27},{"date":"2026-02-19","value":18},{"date":"2026-02-20","value":21},{"date":"2026-02-21","value":17},{"date":"2026-02-22","value":12},{"date":"2026-02-23","value":17},{"date":"2026-02-24","value":39},{"date":"2026-02-25","value":11},{"date":"2026-02-26","value":11},{"date":"2026-02-27","value":5},{"date":"2026-02-28","value":2},{"date":"2026-03-01","value":6},{"date":"2026-03-02","value":10},{"date":"2026-03-03","value":21},{"date":"2026-03-04","value":11},{"date":"2026-03-05","value":8},{"date":"2026-03-06","value":11},{"date":"2026-03-07","value":5},{"date":"2026-03-08","value":7},{"date":"2026-03-09","value":5},{"date":"2026-03-10","value":6},{"date":"2026-03-11","value":7},{"date":"2026-03-12","value":10},{"date":"2026-03-13","value":8},{"date":"2026-03-14","value":5},{"date":"2026-03-15","value":5},{"date":"2026-03-16","value":4},{"date":"2026-03-17","value":3},{"date":"2026-03-18","value":32},{"date":"2026-03-19","value":33},{"date":"2026-03-20","value":21},{"date":"2026-03-21","value":36},{"date":"2026-03-22","value":43},{"date":"2026-03-23","value":34},{"date":"2026-03-24","value":40},{"date":"2026-03-25","value":33},{"date":"2026-03-26","value":30},{"date":"2026-03-27","value":29},{"date":"2026-03-28","value":28},{"date":"2026-03-29","value":32},{"date":"2026-03-30","value":19},{"date":"2026-03-31","value":21},{"date":"2026-04-01","value":26},{"date":"2026-04-02","value":64},{"date":"2026-04-03","value":30},{"date":"2026-04-04","value":18},{"date":"2026-04-05","value":19},{"date":"2026-04-06","value":18},{"date":"2026-04-07","value":20}],"Klikken op link":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":0},{"date":"2025-10-03","value":0},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":0},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":0},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":0},{"date":"2025-10-14","value":0},{"date":"2025-10-15","value":0},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":0},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":0},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":0},{"date":"2025-10-25","value":0},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":0},{"date":"2025-10-28","value":0},{"date":"2025-10-29","value":0},{"date":"2025-10-30","value":0},{"date":"2025-10-31","value":0},{"date":"2025-11-01","value":0},{"date":"2025-11-02","value":3},{"date":"2025-11-03","value":1},{"date":"2025-11-04","value":0},{"date":"2025-11-05","value":0},{"date":"2025-11-06","value":0},{"date":"2025-11-07","value":0},{"date":"2025-11-08","value":0},{"date":"2025-11-09","value":0},{"date":"2025-11-10","value":0},{"date":"2025-11-11","value":0},{"date":"2025-11-12","value":3},{"date":"2025-11-13","value":7},{"date":"2025-11-14","value":1},{"date":"2025-11-15","value":2},{"date":"2025-11-16","value":1},{"date":"2025-11-17","value":1},{"date":"2025-11-18","value":1},{"date":"2025-11-19","value":0},{"date":"2025-11-20","value":0},{"date":"2025-11-21","value":1},{"date":"2025-11-22","value":1},{"date":"2025-11-23","value":6},{"date":"2025-11-24","value":4},{"date":"2025-11-25","value":4},{"date":"2025-11-26","value":2},{"date":"2025-11-27","value":3},{"date":"2025-11-28","value":0},{"date":"2025-11-29","value":4},{"date":"2025-11-30","value":6},{"date":"2025-12-01","value":6},{"date":"2025-12-02","value":1},{"date":"2025-12-03","value":3},{"date":"2025-12-04","value":2},{"date":"2025-12-05","value":3},{"date":"2025-12-06","value":4},{"date":"2025-12-07","value":11},{"date":"2025-12-08","value":10},{"date":"2025-12-09","value":4},{"date":"2025-12-10","value":2},{"date":"2025-12-11","value":0},{"date":"2025-12-12","value":0},{"date":"2025-12-13","value":0},{"date":"2025-12-14","value":0},{"date":"2025-12-15","value":0},{"date":"2025-12-16","value":52},{"date":"2025-12-17","value":12},{"date":"2025-12-18","value":13},{"date":"2025-12-19","value":10},{"date":"2025-12-20","value":9},{"date":"2025-12-21","value":12},{"date":"2025-12-22","value":6},{"date":"2025-12-23","value":15},{"date":"2025-12-24","value":6},{"date":"2025-12-25","value":3},{"date":"2025-12-26","value":7},{"date":"2025-12-27","value":2},{"date":"2025-12-28","value":3},{"date":"2025-12-29","value":4},{"date":"2025-12-30","value":6},{"date":"2025-12-31","value":2},{"date":"2026-01-01","value":1},{"date":"2026-01-02","value":6},{"date":"2026-01-03","value":4},{"date":"2026-01-04","value":6},{"date":"2026-01-05","value":11},{"date":"2026-01-06","value":8},{"date":"2026-01-07","value":8},{"date":"2026-01-08","value":6},{"date":"2026-01-09","value":5},{"date":"2026-01-10","value":5},{"date":"2026-01-11","value":7},{"date":"2026-01-12","value":4},{"date":"2026-01-13","value":6},{"date":"2026-01-14","value":6},{"date":"2026-01-15","value":6},{"date":"2026-01-16","value":16},{"date":"2026-01-17","value":13},{"date":"2026-01-18","value":16},{"date":"2026-01-19","value":15},{"date":"2026-01-20","value":13},{"date":"2026-01-21","value":8},{"date":"2026-01-22","value":12},{"date":"2026-01-23","value":9},{"date":"2026-01-24","value":3},{"date":"2026-01-25","value":3},{"date":"2026-01-26","value":7},{"date":"2026-01-27","value":3},{"date":"2026-01-28","value":5},{"date":"2026-01-29","value":6},{"date":"2026-01-30","value":7},{"date":"2026-01-31","value":8},{"date":"2026-02-01","value":3},{"date":"2026-02-02","value":5},{"date":"2026-02-03","value":2},{"date":"2026-02-04","value":5},{"date":"2026-02-05","value":5},{"date":"2026-02-06","value":4},{"date":"2026-02-07","value":5},{"date":"2026-02-08","value":4},{"date":"2026-02-09","value":4},{"date":"2026-02-10","value":4},{"date":"2026-02-11","value":4},{"date":"2026-02-12","value":6},{"date":"2026-02-13","value":6},{"date":"2026-02-14","value":18},{"date":"2026-02-15","value":9},{"date":"2026-02-16","value":15},{"date":"2026-02-17","value":18},{"date":"2026-02-18","value":13},{"date":"2026-02-19","value":13},{"date":"2026-02-20","value":9},{"date":"2026-02-21","value":14},{"date":"2026-02-22","value":15},{"date":"2026-02-23","value":10},{"date":"2026-02-24","value":14},{"date":"2026-02-25","value":9},{"date":"2026-02-26","value":11},{"date":"2026-02-27","value":6},{"date":"2026-02-28","value":2},{"date":"2026-03-01","value":0},{"date":"2026-03-02","value":18},{"date":"2026-03-03","value":23},{"date":"2026-03-04","value":17},{"date":"2026-03-05","value":14},{"date":"2026-03-06","value":16},{"date":"2026-03-07","value":14},{"date":"2026-03-08","value":18},{"date":"2026-03-09","value":11},{"date":"2026-03-10","value":16},{"date":"2026-03-11","value":12},{"date":"2026-03-12","value":10},{"date":"2026-03-13","value":8},{"date":"2026-03-14","value":16},{"date":"2026-03-15","value":15},{"date":"2026-03-16","value":1},{"date":"2026-03-17","value":3},{"date":"2026-03-18","value":18},{"date":"2026-03-19","value":36},{"date":"2026-03-20","value":8},{"date":"2026-03-21","value":22},{"date":"2026-03-22","value":42},{"date":"2026-03-23","value":35},{"date":"2026-03-24","value":30},{"date":"2026-03-25","value":30},{"date":"2026-03-26","value":19},{"date":"2026-03-27","value":20},{"date":"2026-03-28","value":25},{"date":"2026-03-29","value":24},{"date":"2026-03-30","value":21},{"date":"2026-03-31","value":16},{"date":"2026-04-01","value":25},{"date":"2026-04-02","value":26},{"date":"2026-04-03","value":26},{"date":"2026-04-04","value":19},{"date":"2026-04-05","value":17},{"date":"2026-04-06","value":13},{"date":"2026-04-07","value":22}],"Interacties":[{"date":"2025-10-01","value":0},{"date":"2025-10-02","value":0},{"date":"2025-10-03","value":0},{"date":"2025-10-04","value":0},{"date":"2025-10-05","value":0},{"date":"2025-10-06","value":0},{"date":"2025-10-07","value":0},{"date":"2025-10-08","value":0},{"date":"2025-10-09","value":0},{"date":"2025-10-10","value":0},{"date":"2025-10-11","value":0},{"date":"2025-10-12","value":0},{"date":"2025-10-13","value":0},{"date":"2025-10-14","value":0},{"date":"2025-10-15","value":0},{"date":"2025-10-16","value":0},{"date":"2025-10-17","value":0},{"date":"2025-10-18","value":0},{"date":"2025-10-19","value":0},{"date":"2025-10-20","value":0},{"date":"2025-10-21","value":0},{"date":"2025-10-22","value":0},{"date":"2025-10-23","value":0},{"date":"2025-10-24","value":0},{"date":"2025-10-25","value":0},{"date":"2025-10-26","value":0},{"date":"2025-10-27","value":0},{"date":"2025-10-28","value":0},{"date":"2025-10-29","value":0},{"date":"2025-10-30","value":0},{"date":"2025-10-31","value":18},{"date":"2025-11-01","value":4},{"date":"2025-11-02","value":1},{"date":"2025-11-03","value":1},{"date":"2025-11-04","value":0},{"date":"2025-11-05","value":4},{"date":"2025-11-06","value":3},{"date":"2025-11-07","value":0},{"date":"2025-11-08","value":0},{"date":"2025-11-09","value":0},{"date":"2025-11-10","value":0},{"date":"2025-11-11","value":0},{"date":"2025-11-12","value":0},{"date":"2025-11-13","value":0},{"date":"2025-11-14","value":6},{"date":"2025-11-15","value":3},{"date":"2025-11-16","value":0},{"date":"2025-11-17","value":1},{"date":"2025-11-18","value":0},{"date":"2025-11-19","value":0},{"date":"2025-11-20","value":0},{"date":"2025-11-21","value":3},{"date":"2025-11-22","value":1},{"date":"2025-11-23","value":1},{"date":"2025-11-24","value":2},{"date":"2025-11-25","value":9},{"date":"2025-11-26","value":0},{"date":"2025-11-27","value":5},{"date":"2025-11-28","value":1},{"date":"2025-11-29","value":4},{"date":"2025-11-30","value":2},{"date":"2025-12-01","value":2},{"date":"2025-12-02","value":25},{"date":"2025-12-03","value":35},{"date":"2025-12-04","value":40},{"date":"2025-12-05","value":13},{"date":"2025-12-06","value":22},{"date":"2025-12-07","value":22},{"date":"2025-12-08","value":23},{"date":"2025-12-09","value":9},{"date":"2025-12-10","value":1},{"date":"2025-12-11","value":1},{"date":"2025-12-12","value":2},{"date":"2025-12-13","value":1},{"date":"2025-12-14","value":0},{"date":"2025-12-15","value":0},{"date":"2025-12-16","value":8},{"date":"2025-12-17","value":12},{"date":"2025-12-18","value":14},{"date":"2025-12-19","value":3},{"date":"2025-12-20","value":12},{"date":"2025-12-21","value":7},{"date":"2025-12-22","value":5},{"date":"2025-12-23","value":18},{"date":"2025-12-24","value":7},{"date":"2025-12-25","value":3},{"date":"2025-12-26","value":2},{"date":"2025-12-27","value":4},{"date":"2025-12-28","value":2},{"date":"2025-12-29","value":5},{"date":"2025-12-30","value":8},{"date":"2025-12-31","value":11},{"date":"2026-01-01","value":14},{"date":"2026-01-02","value":5},{"date":"2026-01-03","value":14},{"date":"2026-01-04","value":11},{"date":"2026-01-05","value":17},{"date":"2026-01-06","value":5},{"date":"2026-01-07","value":5},{"date":"2026-01-08","value":10},{"date":"2026-01-09","value":4},{"date":"2026-01-10","value":5},{"date":"2026-01-11","value":7},{"date":"2026-01-12","value":2},{"date":"2026-01-13","value":25},{"date":"2026-01-14","value":19},{"date":"2026-01-15","value":3},{"date":"2026-01-16","value":10},{"date":"2026-01-17","value":7},{"date":"2026-01-18","value":8},{"date":"2026-01-19","value":9},{"date":"2026-01-20","value":12},{"date":"2026-01-21","value":22},{"date":"2026-01-22","value":16},{"date":"2026-01-23","value":17},{"date":"2026-01-24","value":1},{"date":"2026-01-25","value":0},{"date":"2026-01-26","value":3},{"date":"2026-01-27","value":2},{"date":"2026-01-28","value":7},{"date":"2026-01-29","value":3},{"date":"2026-01-30","value":8},{"date":"2026-01-31","value":4},{"date":"2026-02-01","value":2},{"date":"2026-02-02","value":2},{"date":"2026-02-03","value":4},{"date":"2026-02-04","value":2},{"date":"2026-02-05","value":1},{"date":"2026-02-06","value":2},{"date":"2026-02-07","value":1},{"date":"2026-02-08","value":1},{"date":"2026-02-09","value":3},{"date":"2026-02-10","value":1},{"date":"2026-02-11","value":10},{"date":"2026-02-12","value":11},{"date":"2026-02-13","value":22},{"date":"2026-02-14","value":24},{"date":"2026-02-15","value":11},{"date":"2026-02-16","value":16},{"date":"2026-02-17","value":27},{"date":"2026-02-18","value":9},{"date":"2026-02-19","value":4},{"date":"2026-02-20","value":8},{"date":"2026-02-21","value":15},{"date":"2026-02-22","value":11},{"date":"2026-02-23","value":10},{"date":"2026-02-24","value":7},{"date":"2026-02-25","value":15},{"date":"2026-02-26","value":7},{"date":"2026-02-27","value":5},{"date":"2026-02-28","value":1},{"date":"2026-03-01","value":0},{"date":"2026-03-02","value":50},{"date":"2026-03-03","value":23},{"date":"2026-03-04","value":33},{"date":"2026-03-05","value":21},{"date":"2026-03-06","value":6},{"date":"2026-03-07","value":0},{"date":"2026-03-08","value":0},{"date":"2026-03-09","value":2},{"date":"2026-03-10","value":6},{"date":"2026-03-11","value":6},{"date":"2026-03-12","value":1},{"date":"2026-03-13","value":2},{"date":"2026-03-14","value":4},{"date":"2026-03-15","value":1},{"date":"2026-03-16","value":2},{"date":"2026-03-17","value":1},{"date":"2026-03-18","value":17},{"date":"2026-03-19","value":23},{"date":"2026-03-20","value":19},{"date":"2026-03-21","value":18},{"date":"2026-03-22","value":12},{"date":"2026-03-23","value":16},{"date":"2026-03-24","value":18},{"date":"2026-03-25","value":22},{"date":"2026-03-26","value":14},{"date":"2026-03-27","value":10},{"date":"2026-03-28","value":2},{"date":"2026-03-29","value":9},{"date":"2026-03-30","value":9},{"date":"2026-03-31","value":1},{"date":"2026-04-01","value":6},{"date":"2026-04-02","value":26},{"date":"2026-04-03","value":11},{"date":"2026-04-04","value":4},{"date":"2026-04-05","value":0},{"date":"2026-04-06","value":1},{"date":"2026-04-07","value":5}],"Bereik":[{"date":"2025-10-01","value":0},{"date":"2025-10-31","value":607},{"date":"2025-11-01","value":377},{"date":"2025-11-02","value":187},{"date":"2025-11-03","value":33},{"date":"2025-11-05","value":106},{"date":"2025-11-06","value":15},{"date":"2025-11-07","value":4},{"date":"2025-11-08","value":24},{"date":"2025-11-09","value":9},{"date":"2025-11-10","value":2},{"date":"2025-11-11","value":4},{"date":"2025-11-12","value":336},{"date":"2025-11-13","value":355},{"date":"2025-11-14","value":156},{"date":"2025-11-15","value":359},{"date":"2025-11-16","value":341},{"date":"2025-11-17","value":188},{"date":"2025-11-18","value":200},{"date":"2025-11-19","value":167},{"date":"2025-11-20","value":120},{"date":"2025-11-21","value":166},{"date":"2025-11-22","value":260},{"date":"2025-11-23","value":754},{"date":"2025-11-24","value":724},{"date":"2025-11-25","value":539},{"date":"2025-11-26","value":366},{"date":"2025-11-27","value":422},{"date":"2025-11-28","value":312},{"date":"2025-11-29","value":453},{"date":"2025-11-30","value":696},{"date":"2025-12-01","value":609},{"date":"2025-12-02","value":1322},{"date":"2025-12-03","value":901},{"date":"2025-12-04","value":879},{"date":"2025-12-05","value":1064},{"date":"2025-12-06","value":996},{"date":"2025-12-07","value":1737},{"date":"2025-12-08","value":2164},{"date":"2025-12-09","value":917},{"date":"2025-12-10","value":292},{"date":"2025-12-16","value":3854},{"date":"2025-12-17","value":3847},{"date":"2025-12-18","value":2113},{"date":"2025-12-19","value":1796},{"date":"2025-12-20","value":1935},{"date":"2025-12-21","value":2071},{"date":"2025-12-22","value":2025},{"date":"2025-12-23","value":1915},{"date":"2025-12-24","value":703},{"date":"2025-12-25","value":469},{"date":"2025-12-26","value":611},{"date":"2025-12-27","value":675},{"date":"2025-12-28","value":603},{"date":"2025-12-29","value":533},{"date":"2025-12-30","value":1185},{"date":"2025-12-31","value":1675},{"date":"2026-01-01","value":2288},{"date":"2026-01-02","value":2184},{"date":"2026-01-03","value":1990},{"date":"2026-01-04","value":2316},{"date":"2026-01-05","value":3113},{"date":"2026-01-06","value":2003},{"date":"2026-01-07","value":1915},{"date":"2026-01-08","value":1700},{"date":"2026-01-09","value":1088},{"date":"2026-01-10","value":971},{"date":"2026-01-11","value":1076},{"date":"2026-01-12","value":804},{"date":"2026-01-13","value":1588},{"date":"2026-01-14","value":1704},{"date":"2026-01-15","value":1900},{"date":"2026-01-16","value":2411},{"date":"2026-01-17","value":2707},{"date":"2026-01-18","value":2851},{"date":"2026-01-19","value":2124},{"date":"2026-01-20","value":1990},{"date":"2026-01-21","value":5849},{"date":"2026-01-22","value":3206},{"date":"2026-01-23","value":4616},{"date":"2026-01-24","value":1039},{"date":"2026-01-25","value":1177},{"date":"2026-01-26","value":1096},{"date":"2026-01-27","value":1175},{"date":"2026-01-28","value":1138},{"date":"2026-01-29","value":1331},{"date":"2026-01-30","value":1305},{"date":"2026-01-31","value":1193},{"date":"2026-02-01","value":1240},{"date":"2026-02-02","value":1214},{"date":"2026-02-03","value":1090},{"date":"2026-02-04","value":1362},{"date":"2026-02-05","value":1110},{"date":"2026-02-06","value":1064},{"date":"2026-02-07","value":1227},{"date":"2026-02-08","value":945},{"date":"2026-02-09","value":1147},{"date":"2026-02-10","value":1290},{"date":"2026-02-11","value":1069},{"date":"2026-02-12","value":1102},{"date":"2026-02-13","value":1799},{"date":"2026-02-14","value":2784},{"date":"2026-02-15","value":2693},{"date":"2026-02-16","value":2450},{"date":"2026-02-17","value":2884},{"date":"2026-02-18","value":2531},{"date":"2026-02-19","value":2494},{"date":"2026-02-20","value":2093},{"date":"2026-02-21","value":2641},{"date":"2026-02-22","value":2431},{"date":"2026-02-23","value":2609},{"date":"2026-02-24","value":2052},{"date":"2026-02-25","value":1917},{"date":"2026-02-26","value":2270},{"date":"2026-02-27","value":1892},{"date":"2026-02-28","value":459},{"date":"2026-03-01","value":11},{"date":"2026-03-02","value":4551},{"date":"2026-03-03","value":4090},{"date":"2026-03-04","value":4505},{"date":"2026-03-05","value":3941},{"date":"2026-03-06","value":2219},{"date":"2026-03-07","value":1454},{"date":"2026-03-08","value":1476},{"date":"2026-03-09","value":1309},{"date":"2026-03-10","value":1347},{"date":"2026-03-11","value":1273},{"date":"2026-03-12","value":1178},{"date":"2026-03-13","value":1182},{"date":"2026-03-14","value":1386},{"date":"2026-03-15","value":835},{"date":"2026-03-16","value":806},{"date":"2026-03-17","value":592},{"date":"2026-03-18","value":1105},{"date":"2026-03-19","value":1619},{"date":"2026-03-20","value":1691},{"date":"2026-03-21","value":2222},{"date":"2026-03-22","value":2819},{"date":"2026-03-23","value":2880},{"date":"2026-03-24","value":2434},{"date":"2026-03-25","value":1969},{"date":"2026-03-26","value":1920},{"date":"2026-03-27","value":1840},{"date":"2026-03-28","value":1595},{"date":"2026-03-29","value":1646},{"date":"2026-03-30","value":1428},{"date":"2026-03-31","value":1615},{"date":"2026-04-01","value":1673},{"date":"2026-04-02","value":4112},{"date":"2026-04-03","value":2147},{"date":"2026-04-04","value":1641},{"date":"2026-04-05","value":1412},{"date":"2026-04-06","value":1133},{"date":"2026-04-07","value":1136}]};
+
+const MONTHS = [
+  {key:'2025-10',label:'Okt'},
+  {key:'2025-11',label:'Nov'},
+  {key:'2025-12',label:'Dec'},
+  {key:'2026-01',label:'Jan'},
+  {key:'2026-02',label:'Feb'},
+  {key:'2026-03',label:'Mrt'},
+  {key:'2026-04',label:'Apr*'},
+];
+
+function monthTotals(key) {
+  return MONTHS.map(m => RAW[key].filter(r => r.date.startsWith(m.key)).reduce((s,r)=>s+r.value,0));
+}
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000) return (n/1000).toFixed(1)+'K';
+  return n.toLocaleString('nl-BE');
+}
+
+// KPIs
+document.getElementById('ig-kpi-bereik').textContent = fmt(RAW['Bereik'].reduce((s,r)=>s+r.value,0));
+document.getElementById('ig-kpi-bezoeken').textContent = fmt(RAW['Bezoeken'].reduce((s,r)=>s+r.value,0));
+document.getElementById('ig-kpi-interacties').textContent = fmt(RAW['Interacties'].reduce((s,r)=>s+r.value,0));
+document.getElementById('ig-kpi-klikken').textContent = fmt(RAW['Klikken op link'].reduce((s,r)=>s+r.value,0));
+document.getElementById('ig-kpi-volgers').textContent = fmt(RAW['Volgers'].reduce((s,r)=>s+r.value,0));
+
+const LABELS = MONTHS.map(m => m.label);
+
+const baseOpts = () => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {display: false},
+    tooltip: {
+      backgroundColor: '#1a1a1a',
+      titleColor: '#999',
+      bodyColor: '#fff',
+      borderColor: 'rgba(255,255,255,0.08)',
+      borderWidth: 1,
+      padding: 12,
+      callbacks: {label: item => '  ' + item.raw.toLocaleString('nl-BE')}
+    }
+  },
+  scales: {
+    x: {
+      grid: {display: false},
+      ticks: {color: '#666', font: {size: 12, family: 'Poppins', weight: '500'}},
+      border: {color: 'rgba(255,255,255,0.06)'}
+    },
+    y: {
+      grid: {color: 'rgba(255,255,255,0.04)'},
+      ticks: {color: '#555', font: {size: 11, family: 'Poppins'}, callback: v => fmt(v)},
+      border: {display: false}
+    }
+  }
+});
+
+function buildBar(id, key, baseColor, totalId) {
+  const values = monthTotals(key);
+  document.getElementById(totalId).textContent = fmt(values.reduce((s,v)=>s+v,0));
+  const n = values.length;
+  const bgColors = values.map((_,i) => {
+    const t = i / (n-1);
+    const alpha = Math.round((0.3 + t * 0.7) * 255).toString(16).padStart(2,'0');
+    return baseColor + alpha;
+  });
+  const hoverColors = values.map((_,i) => {
+    const t = i / (n-1);
+    const alpha = Math.round((0.5 + t * 0.5) * 255).toString(16).padStart(2,'0');
+    return baseColor + alpha;
+  });
+  new Chart(document.getElementById(id).getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: LABELS,
+      datasets: [{data: values, backgroundColor: bgColors, hoverBackgroundColor: hoverColors, borderRadius: 8, borderSkipped: false}]
+    },
+    options: baseOpts()
+  });
+}
+
+buildBar('ig-chartKlikken',    'Klikken op link', '#E1306C', 'ig-total-klikken');
+buildBar('ig-chartBezoeken',   'Bezoeken',        '#833AB4', 'ig-total-bezoeken');
+buildBar('ig-chartInteracties','Interacties',     '#F77737', 'ig-total-interacties');
+buildBar('ig-chartVolgers',    'Volgers',         '#FCAF45', 'ig-total-volgers');
+
+}
+
+// ===================== HUBSPOT =====================
+function initHS() {
+
+const donutOpts = (labels, data, colors) => ({
+  type: 'doughnut',
+  data: {
+    labels,
+    datasets: [{
+      data,
+      backgroundColor: colors.map(c => c + 'bb'),
+      borderColor: colors,
+      borderWidth: 1,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {color: '#888', font: {size: 11, family: 'Poppins'}, padding: 14, boxWidth: 12}
+      },
+      tooltip: {
+        backgroundColor: '#1a1a1a',
+        titleColor: '#999',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: item => {
+            const total = item.dataset.data.reduce((s,v)=>s+v,0);
+            const pct = ((item.raw/total)*100).toFixed(1);
+            return `  ${item.raw.toLocaleString('nl-BE')} (${pct}%)`;
+          }
+        }
+      }
+    }
+  }
+});
+
+new Chart(
+  document.getElementById('hs-chartDeviceOpens').getContext('2d'),
+  donutOpts(
+    ['Desktop', 'Mobiel', 'Overig'],
+    [1098, 306, 463],
+    ['#FF7A59', '#f0ad4e', '#555']
+  )
+);
+
+new Chart(
+  document.getElementById('hs-chartDeviceClicks').getContext('2d'),
+  donutOpts(
+    ['Desktop', 'Mobiel', 'Overig'],
+    [72, 33, 0],
+    ['#FF7A59', '#f0ad4e', '#333']
+  )
+);
+
+}
+
+// Init first tab on load
+window.addEventListener('load', () => {
+  activeCharts['fb'] = true;
+  initFB();
+});
+</script>
+</body>
+</html>
